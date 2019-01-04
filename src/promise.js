@@ -14,28 +14,33 @@ class OwnPromise {
     if (this.state !== 'PENDING') {
       return undefined;
     }
+    this.state = 'FULFILLED';
     return value && ({}).hasOwnProperty.call(value, 'then') ? value
       : new OwnPromise(resolve => {
         resolve(value);
       });
   }
+
   // static all() {
 
   // }
   // static race() {
 
   // }
-//   static resolve(value) {
-//     return new OwnPromise(resolve => resolve(value));
-//   }
-  // static reject() {
+  //   static resolve(value) {
+  //     return new OwnPromise(resolve => resolve(value));
+  //   }
 
-  // }
+  then(onFulfilled, onRejected) {
+    if (this.state === 'FULFILLED') {
+      return new OwnPromise(onFulfilled => onFulfilled(this.value));
+    }
 
+    if (this.state === 'REJECTED') {
+      return new OwnPromise(onRejected => onRejected(this.value));
+    }
+  }
 
-  // then() {
-
-  // }
   // catch() {
   // }
   // finally() {

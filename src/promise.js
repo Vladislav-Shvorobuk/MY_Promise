@@ -11,14 +11,18 @@ class OwnPromise {
   }
 
   static resolve(value) {
-    if (this.state !== 'PENDING') {
-      return undefined;
-    }
     this.state = 'FULFILLED';
+    this.value = value;
     return value && ({}).hasOwnProperty.call(value, 'then') ? value
       : new OwnPromise(resolve => {
         resolve(value);
       });
+  }
+
+  static reject(reason) {
+    this.state = 'REJECTED';
+    this.value = reason;
+    return new OwnPromise((_, reject) => reject(reason));
   }
 
   // static all() {

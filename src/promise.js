@@ -28,9 +28,20 @@ class OwnPromise {
   // static all() {
 
   // }
-  // static race() {
-
-  // }
+  static race(iterable) {
+    return new OwnPromise((resolve, reject) => {
+      iterable.forEach((item, i) => {
+        if (!(item instanceof OwnPromise)) {
+          throw new TypeError('inner argument must be an instance of Promise.');
+        }
+        item.then(res => {
+          resolve(res);
+        }, err => {
+          reject(err);
+        });
+      });
+    });
+  }
 
   then(onFulfilled, onRejected) {
     if (this.state === 'FULFILLED') {
@@ -45,8 +56,11 @@ class OwnPromise {
   catch(onRejected) {
     return this.then(null, onRejected);
   }
-  // finally() {
-  // }
+
+  finally(onFinally) {
+    return new OwnPromise(onFinally => onFinally(this.value));
+  }
+
   // get [Symbol.toStringTag]() {
   //   return this.name;
   // }

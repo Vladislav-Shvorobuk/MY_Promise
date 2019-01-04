@@ -45,8 +45,10 @@ class OwnPromise {
   catch(onRejected) {
     return this.then(null, onRejected);
   }
-  // finally() {
-  // }
+
+  finally(fn) {
+    return this.then(res => OwnPromise.resolve(fn()).then(() => res), err => OwnPromise.reject(fn()).then(() => err));
+  }
   // get [Symbol.toStringTag]() {
   //   return this.name;
   // }

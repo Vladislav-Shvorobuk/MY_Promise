@@ -31,9 +31,6 @@ class OwnPromise {
   // static race() {
 
   // }
-  //   static resolve(value) {
-  //     return new OwnPromise(resolve => resolve(value));
-  //   }
 
   then(onFulfilled, onRejected) {
     if (this.state === 'FULFILLED') {
@@ -45,8 +42,9 @@ class OwnPromise {
     }
   }
 
-  // catch() {
-  // }
+  catch(onRejected) {
+    return this.then(null, onRejected);
+  }
   // finally() {
   // }
   // get [Symbol.toStringTag]() {

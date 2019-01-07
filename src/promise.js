@@ -7,7 +7,35 @@ class OwnPromise {
     this.state = 'PENDING';
     this.value = null;
     this.queue = [];
-    executor(OwnPromise.resolve, OwnPromise.reject);
+
+    const _resolve = res => {
+      this.state = 'FULFILLED';
+      setTimeout(res => {
+        for (const task of this.queue) {
+          const func = task.resolve;
+          func(res);
+        }
+        this.queue = [];
+      }, 0);
+    };
+
+    const _reject = res => {
+      this.state = 'REJECTED';
+      setTimeout(res => {
+        for (const task of this.queue) {
+          const func = task.reject;
+          func(this.data);
+        }
+        this.queue = [];
+      }, 0);
+    };
+
+    try {
+      executor(_resolve, _reject);
+    } catch (error) {
+      _reject(error);
+    }
+    return this;
   }
 
   static resolve(value) {
@@ -34,7 +62,7 @@ class OwnPromise {
       return new OwnPromise((resolve, reject) => {
         promises.forEach((promise, i) => {
           if (!(promise instanceof OwnPromise)) {
-            throw new TypeError('variable must be a Promise instance.');
+            throw new TypeError('Variable isn\'t a Promise instance.');
           }
           promise.then(res => {
             results[i] = res;
@@ -65,15 +93,45 @@ class OwnPromise {
     });
   }
 
-  then(onFulfilled, onRejected) {
-    if (this.state === 'FULFILLED') {
-      return new OwnPromise(onFulfilled => onFulfilled(this.value));
+  static next({ onFulfilled, onRejected }) {
+    if (this.state === 'PENDING') {
+      this.que.push({ resolve: onFulfilled, reject: onRejected });
+      return;
     }
 
     if (this.state === 'REJECTED') {
-      return new OwnPromise(onRejected => onRejected(this.value));
+      onFulfilled(this.data);
+    } else {
+      onRejected(this.data);
     }
   }
+
+  then(onFulfilled, onRejected) {
+    const next = OwnPromise.next.bind(this);
+
+    return new OwnPromise((resolve, reject) => {
+      next({
+        onFulfilled: res => {
+          const result = onFulfilled(res);
+          resolve(result);
+        },
+        onRejected: err => {
+          const error = onRejected(err);
+          reject(error);
+        }
+      });
+    });
+  }
+
+  // then(onFulfilled, onRejected) {
+  //   if (this.state === 'FULFILLED') {
+  //     return new OwnPromise(onFulfilled => onFulfilled(this.value));
+  //   }
+
+  //   if (this.state === 'REJECTED') {
+  //     return new OwnPromise(onRejected => onRejected(this.value));
+  //   }
+  // }
 
   catch(onRejected) {
     return this.then(null, onRejected);

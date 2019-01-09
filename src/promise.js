@@ -5,7 +5,6 @@ class OwnPromise {
     }
 
     this.state = 'PENDING';
-    this.value = null;
     this.queue = [];
 
     const _resolve = res => {
@@ -24,7 +23,7 @@ class OwnPromise {
       setTimeout(res => {
         for (const task of this.queue) {
           const func = task.reject;
-          func(this.data);
+          func(res);
         }
         this.queue = [];
       }, 0);
@@ -38,68 +37,13 @@ class OwnPromise {
     return this;
   }
 
-  static resolve(value) {
-    this.state = 'FULFILLED';
-    this.value = value;
-    return value && ({}).hasOwnProperty.call(value, 'then') ? value
-      : new OwnPromise(resolve => {
-        resolve(value);
-      });
-  }
-
-  static reject(reason) {
-    this.state = 'REJECTED';
-    this.value = reason;
-    return new OwnPromise((_, reject) => reject(reason));
-  }
-
-  static all(promises) {
-    if ((!Array.isArray(promises)) || !(promises instanceof OwnPromise)) {
-      throw new TypeError('Promise.all arguments must be an array.');
-    } else {
-      const results = [];
-
-      return new OwnPromise((resolve, reject) => {
-        promises.forEach((promise, i) => {
-          if (!(promise instanceof OwnPromise)) {
-            throw new TypeError('Variable isn\'t a Promise instance.');
-          }
-          promise.then(res => {
-            results[i] = res;
-
-            if (results.length === promises.length) {
-              resolve(results);
-            }
-          }, err => {
-            reject(err);
-          });
-        });
-      });
-    }
-  }
-
-  static race(iterable) {
-    return new OwnPromise((resolve, reject) => {
-      iterable.forEach((item, i) => {
-        if (!(item instanceof OwnPromise)) {
-          throw new TypeError('inner argument must be an instance of Promise.');
-        }
-        item.then(res => {
-          resolve(res);
-        }, err => {
-          reject(err);
-        });
-      });
-    });
-  }
-
   static next({ onFulfilled, onRejected }) {
     if (this.state === 'PENDING') {
-      this.que.push({ resolve: onFulfilled, reject: onRejected });
+      this.dat.push({ resolve: onFulfilled, reject: onRejected });
       return;
     }
 
-    if (this.state === 'REJECTED') {
+    if (this.state === 'FULFILLED') {
       onFulfilled(this.data);
     } else {
       onRejected(this.data);
@@ -122,6 +66,91 @@ class OwnPromise {
       });
     });
   }
+
+  static resolve(value) {
+    this.state = 'FULFILLED';
+
+    if (typeof this !== 'function') {
+      throw new TypeError('this is not a function');
+    }
+
+    return new OwnPromise((resolve, reject) => {
+      if (!(this instanceof OwnPromise)) {
+        throw new TypeError('must be instance of Promise.');
+      }
+
+      if (value instanceof OwnPromise) {
+        return value;
+      }
+
+      if (value && value.then && typeof value.then === 'function') {
+        return new OwnPromise(value.then);
+      }
+      resolve(value);
+    });
+  }
+
+  static reject(reason) {
+    this.state = 'REJECTED';
+
+    if (typeof this !== 'function') {
+      throw new TypeError('this is not a function');
+    }
+    return new OwnPromise((resolve, reject) => {
+      if (reason instanceof OwnPromise) {
+        return reason;
+      }
+
+      if (reason.then && typeof reason.then === 'function') {
+        return new OwnPromise(reason.then);
+      }
+      reject(reason);
+    });
+  }
+
+  static all(promises) {
+    if (typeof this !== 'function') {
+      throw new TypeError('this is not a function');
+    }
+
+    // if ((!Array.isArray(promises))) {
+    //   throw new TypeError('Promise.all arguments must be an array.');
+    // }
+    const results = [];
+
+    return new OwnPromise((resolve, reject) => {
+      promises.forEach((promise, i) => {
+        promise.then(res => {
+          results[i] = res;
+
+          if (results.length === promises.length) {
+            resolve(results);
+          }
+        }, err => {
+          reject(err);
+        });
+      });
+    });
+  }
+
+  static race(iterable) {
+    if (typeof this !== 'function') {
+      throw new TypeError('this is not a function');
+    }
+    return new OwnPromise((resolve, reject) => {
+      iterable.forEach((item, i) => {
+        if (!(item instanceof OwnPromise)) {
+          throw new TypeError('inner argument must be an instance of Promise.');
+        }
+        item.then(res => {
+          resolve(res);
+        }, err => {
+          reject(err);
+        });
+      });
+    });
+  }
+
 
   // then(onFulfilled, onRejected) {
   //   if (this.state === 'FULFILLED') {

@@ -3,41 +3,52 @@ const RESOLVED = 'RESOLVED';
 const PENDING = 'PENDING';
 const REJECTED = 'REJECTED';
 
-let cb = null;
-
 class OwnPromise {
   constructor(exeq) {
     this.state = PENDING;
     this.callbacks = [];
 
-   const resolve = (data) => {
-      if(this.state !== PENDING){
+    const resolve = (data) => {
+      if (this.state !== PENDING) {
         return;
       }
 
       this.state = RESOLVED;
 
-      if(data instanceof OwnPromise){
+      if (data instanceof OwnPromise) {
         data.then(a => this.value = a);
       }
-      
+
       this.value = data;
-      this.callbacks.forEach(({res, rej}) => {
-        //нужна проверка
-      this.value = res(this.value);
+      this.callbacks.forEach(({ res, rej }) => {
+        this.value = res(this.value);
       });
-   }
-   const reject = (error) => {
+    }
 
-   }
+    const reject = (error) => {
+      if (this.state !== PENDING) {
+        return;
+      }
 
-   try {
-    exeq(resolve, reject);
-   } catch (e){
-     reject(e);
-   }
+      this.state = REJECTED;
 
-   return this;
+      // if (error instanceof OwnPromise) {
+      //   error.then(a => this.value = a);
+      // }
+
+      this.value = error;
+      this.callbacks.forEach(({ res, rej }) => {
+      this.value = rej(error);
+      });
+    }
+
+    try {
+      exeq(resolve, reject);
+    } catch (e) {
+      reject(e);
+    }
+
+    //  return this;
   }
 
   // вынести логику 
@@ -47,6 +58,7 @@ class OwnPromise {
       this.callbacks.push({ resolve: onFulfilled, reject: onRejected });
       return this;
     }
+
     this.callbacks.push({ resolve: onFulfilled, reject: onRejected });
 
     return new OwnPromise((resolve, reject) => {
@@ -61,7 +73,7 @@ class OwnPromise {
   }
 
   catch(rej) {
-    return this;
+    return this.then(rej);
   }
 }
 
@@ -169,7 +181,7 @@ p.then((value) =>{
   //     // }
   //   });
   // }
-  
+
   // onFulfilling(resolve) {
   //   resolve(this.value);
   // }

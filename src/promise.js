@@ -110,6 +110,9 @@ class OwnPromise {
 
 // CHECK_FUNCTION
   static checkFunction(result, resolve, reject) {
+    if (typeof resolve !== 'function' || typeof reject !== 'function') {
+      throw new TypeError('Not a function');
+    }
     if (result === new OwnPromise) {
       return reject(new TypeError("Circular reference"));
     };
@@ -148,20 +151,23 @@ class OwnPromise {
 
   // ALL
   static all(promises) {
+    if(typeof this !== 'function'){
+      throw TypeError('this === function');
+    }
 
     if(promises.length == undefined ){
       return new OwnPromise((resolve, reject) => {
-        reject(new TypeError('Not an array'));
+        reject(new TypeError('Not an itterable'));
       });
     }
-    if(typeof this !== 'function'){
-         throw TypeError('typeof this !== function');
-    }
+
     if(promises.length == 0 ){
       return new OwnPromise((resolve, reject) => {
         resolve([]);
       });
     }
+
+
 
     return new OwnPromise((resolve, reject) => {
       let result = [];
@@ -234,7 +240,11 @@ class OwnPromise {
     if (typeof this !== 'function') {
       throw new TypeError('this is not a function');
     }
+
     return new OwnPromise((resolve, reject) => {
+      if (typeof reject !== 'function') {
+        throw new TypeError('Not a function');
+      }
       reject(error);
     });
   };

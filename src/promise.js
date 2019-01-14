@@ -8,6 +8,10 @@ class OwnPromise {
     this.state = PENDING;
     this.callbacks = [];
 
+    if(typeof exeq !== 'function'){
+      throw TypeError('');
+    }
+
     const resolve = (data) => {
       if (this.state !== PENDING) {
         return;
@@ -51,20 +55,24 @@ class OwnPromise {
 
   then(onFulfilled, onRejected) {
     if (this.state === PENDING) {
-      this.callbacks.push({ res: onFulfilled, rej: onRejected });
-      return this;
+      // setTimeout(() => {
+        this.callbacks.push({ res: onFulfilled, rej: onRejected });
+      // }, 0);
+      return new OwnPromise((resolve, reject) => {
+        resolve(onFulfilled(this.value));
+        reject(onFulfilled(this.value));
+      });
     }
 
-    this.callbacks.push({ res: onFulfilled, rej: onRejected });
+    this.callbacks.push({ onFulfilled, onRejected });
 
     return new OwnPromise((resolve, reject) => {
-      try {
-        const res = onFulfilled(this.value);
-        resolve(res);
-      } catch (err) {
-        const res = onRejected(err);
-        reject(res);
-      }
+      setTimeout(() => {
+        resolve(onFulfilled(this.value));
+      }, 0);
+      setTimeout(() => {
+        reject(onFulfilled(this.value));
+      }, 0);
     });
   }
 
@@ -193,18 +201,19 @@ const p = new OwnPromise(function (resolve, reject) {
 
 p.then((v) => {
   console.log(v, 'first then 1');
-  return 'then 1'
+  return 'then'
 }).then((v) => {
   console.log(v, 'second after first then 4');
-  return 'then 2'
+  return 'then'
 });
 
 p.then((v) => {
   console.log(v, 'first independed then 2');
-
+  return 'then'
 });
 p.then((v) => {
   console.log(v, 'second independed then 3')
+  return 'then'
 });
 
 

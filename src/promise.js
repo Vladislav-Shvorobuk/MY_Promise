@@ -10,11 +10,15 @@ class OwnPromise {
     this.onRejectedCallbacks = [];
     this.status = PENDING;
 
-    const resolve = res => {
+const resolve = res => {
+      if (res instanceof OwnPromise) {
+        res.then(resolve);
+      }
+
       if (this.status === PENDING) {
+        this.status = FULFILLED;
+        this.value = res;
         setTimeout(() => {
-          this.status = FULFILLED;
-          this.value = res;
           this.onFulfilledCallbacks.forEach(callback => {
             callback(this.value);
           }, 0);
@@ -24,9 +28,9 @@ class OwnPromise {
 
     const reject = error => {
       if (this.status === PENDING) {
+        this.status = REJECTED;
+        this.error = error;
         setTimeout(() => {
-          this.status = REJECTED;
-          this.error = error;
           this.onRejectedCallbacks.forEach(callback => {
             callback(this.error);
           }, 0);

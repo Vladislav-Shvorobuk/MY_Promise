@@ -100,6 +100,43 @@ class OwnPromise {
     });
   };
 
+  static all(promises) {
+
+    if (promises.length == undefined) {
+      return new OwnPromise((resolve, reject) => {
+        reject(new TypeError('Promises are\'t iterable'));
+      });
+    }
+
+    if (typeof this !== 'function') {
+      throw new TypeError('Not a function');
+    }
+
+    if (promises.length == 0) {
+      return new OwnPromise((resolve, reject) => {
+        resolve([]);
+      });
+    }
+
+    return new OwnPromise((resolve, reject) => {
+      let result = [];
+
+      for (let i = 0; i < promises.length; i++) {
+        promises[i].then(
+          data => {
+            result[i] = data;
+            if (result.length === promises.length) {
+              resolve(result);
+            }
+          },
+          err => {
+            reject(err);
+          }
+        );
+      }
+    });
+  }
+
 
   catch(onRejected) {
     return this.then(onRejected);

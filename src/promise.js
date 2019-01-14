@@ -38,7 +38,7 @@ class OwnPromise {
 
       this.value = error;
       this.callbacks.forEach(({ res, rej }) => {
-      this.value = rej(error);
+        this.value = rej(error);
       });
     }
 
@@ -47,19 +47,15 @@ class OwnPromise {
     } catch (e) {
       reject(e);
     }
-
-    //  return this;
   }
-
-  // вынести логику 
 
   then(onFulfilled, onRejected) {
     if (this.state === PENDING) {
-      this.callbacks.push({ resolve: onFulfilled, reject: onRejected });
+      this.callbacks.push({ res: onFulfilled, rej: onRejected });
       return this;
     }
 
-    this.callbacks.push({ resolve: onFulfilled, reject: onRejected });
+    this.callbacks.push({ res: onFulfilled, rej: onRejected });
 
     return new OwnPromise((resolve, reject) => {
       try {
@@ -72,12 +68,84 @@ class OwnPromise {
     });
   }
 
-  catch(rej) {
-    return this.then(rej);
+  static resolve(value) {
+    if (value && typeof value === 'object') {
+      return value;
+    }
+
+    return new this((resolve, reject) => {
+      if (typeof resolve !== 'function' || reject != 'function') {
+        throw new TypeError('Not a function');
+      }
+
+      try {
+        resolve(value);
+      } catch (err) {
+        reject(res);
+      }
+    });
+  }
+
+
+  static reject(reason) {
+    if (typeof this !== 'function') {
+      throw new TypeError('this is not a function');
+    }
+
+    return new OwnPromise((resolve, reject) => {
+      if (typeof reject !== 'function') {
+        throw new TypeError('Not a function');
+      }
+      reject(reason);
+    });
+  };
+
+
+  catch(onRejected) {
+    return this.then(onRejected);
   }
 }
 
 module.exports = OwnPromise;
+
+
+
+
+
+
+
+
+
+const p = new OwnPromise(function (resolve, reject) {
+  setTimeout(() => {
+    console.log('resolve');
+    resolve('value');
+  }, 1000);
+});
+
+
+p.then((v) => {
+  console.log(v, 'first then 1');
+  return 'then 1'
+}).then((v) => {
+  console.log(v, 'second after first then 4');
+  return 'then 2'
+});
+
+p.then((v) => {
+  console.log(v, 'first independed then 2');
+
+});
+p.then((v) => {
+  console.log(v, 'second independed then 3')
+});
+
+
+
+
+
+
+
 
 /* 
 let p = new Promise((resolve, reject) => {

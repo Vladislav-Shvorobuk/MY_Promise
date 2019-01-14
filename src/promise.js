@@ -137,6 +137,36 @@ class OwnPromise {
     });
   }
 
+  static race(promises) {
+    if (typeof this !== 'function') {
+      throw new TypeError('');
+    }
+
+    if (promises == []) {
+      return new OwnPromise((resolve, reject) => {
+      });
+    }
+
+    if (promises.length == undefined) {
+      return new OwnPromise((resolve, reject) => {
+        reject(new TypeError('Not an itterable'));
+      });
+    }
+
+    return new OwnPromise((resolve, reject) => {
+      for (let i = 0; i < promises.length; i++) {
+        promises[i].then(
+          res => {
+            resolve(res);
+          },
+          err => {
+            reject(err);
+          }
+        );
+      }
+    });
+  }
+
 
   catch(onRejected) {
     return this.then(onRejected);

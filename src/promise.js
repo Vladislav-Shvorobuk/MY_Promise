@@ -9,6 +9,9 @@ class OwnPromise {
     this.onFulfilledCallbacks = [];
     this.onRejectedCallbacks = [];
     this.status = PENDING;
+    if (typeof executor !== 'function') {
+      throw new TypeError('Not a function');
+    }
 
 const resolve = res => {
       if (res instanceof OwnPromise) {
@@ -48,19 +51,18 @@ const resolve = res => {
 
 // THEN
   then(onFulfilled, onRejected) {
-
     onFulfilled = typeof onFulfilled === "function" ? onFulfilled : value => value;
     onRejected =  typeof onRejected === "function" ? onRejected : error => { error; };
   
     if (this.status === FULFILLED) {
       return new OwnPromise((resolve, reject) => {
         setTimeout(() => {
-          try {
+          // try {
             let result = onFulfilled(this.value);
             OwnPromise.checkFunction(result, resolve, reject);
-          } catch (error) {
-            reject(error);
-          }
+          // } catch (error) {
+          //   reject(error);
+          // }
         }, 0);
       });
     }
@@ -68,41 +70,36 @@ const resolve = res => {
     if (this.status === REJECTED) {
       return new OwnPromise((resolve, reject) => {
         setTimeout(() => {
-          try {
+          // try {
             let result = onRejected(this.error);
             OwnPromise.checkFunction(result, resolve, reject);
-          } catch (error) {
-            reject(error);
-          }
+          // } catch (error) {
+          //   reject(error);
+          // }
         }, 0);
       });
     }
     if (this.status === PENDING) {
       return new OwnPromise((resolve, reject) => {
         this.onFulfilledCallbacks.push(value => {
-          try {
+          // try {
             let result = onFulfilled(value);
             OwnPromise.checkFunction(result, resolve, reject);
-          } catch (error) {
-            reject(error);
-          }
+          // } catch (error) {
+          //   reject(error);
+          // }
         });
   
         this.onRejectedCallbacks.push(error => {
-          try {
+          // try {
             let result = onRejected(error);
             OwnPromise.checkFunction(result, resolve, reject);
-          } catch (error) {
-            reject(error);
-          }
+          // } catch (error) {
+          //   reject(error);
+          // }
         });
       });
     }
-  }
-
-// CATCH
-  catch(onRejected) {
-    return this.then(null, onRejected);
   }
 
 // CHECK_FUNCTION
@@ -111,36 +108,63 @@ const resolve = res => {
       throw new TypeError('Not a function');
     }
 
-    let called = false;
-
-    if (result != null && (typeof result === "object" || typeof result === "function")) {
-      try {
-        let then = result.then;
-        if (typeof then === "function") {
-          then.call(
-            x,
-            y => {
-              if (called) return;
-              called = true;
-              checkFunction(y, resolve, reject);
-            },
-            error => {
-              if (called) return;
-              called = true;
-              reject(error);
-            }
-          );
-        } else {
-          resolve(result);
-        }
-      } catch (e) {
-        if (called) return;
-        called = true;
-        reject(e);
+    try {
+      if (result instanceof OwnPromise){
+        result.then(a => resolve(a));
+      }else {
+        resolve(result);
       }
-    } else {
-      resolve(result);
+    } catch (e){
+      reject(e);
     }
+
+    if (result instanceof OwnPromise){
+      result.then(a => reject(a));
+    }else {
+      reject(result);
+      // throw new TypeError('Not a ${error}');
+    }
+
+
+    // let called = false;
+
+    // if (result instanceof OwnPromise) {
+    //   try {
+    //     let then = result.then;
+    //     if (typeof then === "function") {
+    //       then.call(
+    //         x,
+    //         y => {
+    //           if (called) return;
+    //           called = true;
+    //           checkFunction(y, resolve, reject);
+    //         },
+    //         error => {
+    //           if (called) return;
+    //           called = true;
+    //           reject(error);
+    //         }
+    //       );
+    //     } else {
+    //       resolve(result);
+    //     }
+    //   } catch (e) {
+    //     if (called) return;
+    //     called = true;
+    //     reject(e);
+    //   }
+    // } else {
+    //   resolve(result);
+    // }
+  }
+
+  // CATCH
+  catch(onRejected) {
+    return this.then(null, onRejected);
+  }
+
+  finally(fn) {
+    return this.then(res => OwnPromise.resolve(fn()).then(() => res), err => OwnPromise.reject(fn()).then(() => err));
   }
 
   // ALL
@@ -233,7 +257,7 @@ const resolve = res => {
       throw new TypeError('this is not a function');
     }
 
-    return new OwnPromise((resolve, reject) => {
+    return new this((resolve, reject) => {
       if (typeof reject !== 'function') {
         throw new TypeError('Not a function');
       }

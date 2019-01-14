@@ -11,9 +11,6 @@ class OwnPromise {
     this.status = PENDING;
 
     const resolve = res => {
-      if (res instanceof OwnPromise) {
-        res.then(resolve, reject);
-      }
       if (this.status === PENDING) {
         setTimeout(() => {
           this.status = FULFILLED;
@@ -44,17 +41,12 @@ class OwnPromise {
       reject(error);
     }
   }
+
 // THEN
   then(onFulfilled, onRejected) {
 
-    onFulfilled =
-      typeof onFulfilled === "function" ? onFulfilled : value => value;
-    onRejected =
-      typeof onRejected === "function"
-        ? onRejected
-        : error => {
-            throw error;
-          };
+    onFulfilled = typeof onFulfilled === "function" ? onFulfilled : value => value;
+    onRejected =  typeof onRejected === "function" ? onRejected : error => { error; };
   
     if (this.status === FULFILLED) {
       return new OwnPromise((resolve, reject) => {
@@ -68,12 +60,13 @@ class OwnPromise {
         }, 0);
       });
     }
+
     if (this.status === REJECTED) {
       return new OwnPromise((resolve, reject) => {
         setTimeout(() => {
           try {
-            let x = onRejected(this.error);
-            OwnPromise.checkFunction(x, resolve, reject);
+            let result = onRejected(this.error);
+            OwnPromise.checkFunction(result, resolve, reject);
           } catch (error) {
             reject(error);
           }
@@ -84,8 +77,8 @@ class OwnPromise {
       return new OwnPromise((resolve, reject) => {
         this.onFulfilledCallbacks.push(value => {
           try {
-            let x = onFulfilled(value);
-            OwnPromise.checkFunction(x, resolve, reject);
+            let result = onFulfilled(value);
+            OwnPromise.checkFunction(result, resolve, reject);
           } catch (error) {
             reject(error);
           }
@@ -93,8 +86,8 @@ class OwnPromise {
   
         this.onRejectedCallbacks.push(error => {
           try {
-            let x = onRejected(error);
-            OwnPromise.checkFunction(x, resolve, reject);
+            let result = onRejected(error);
+            OwnPromise.checkFunction(result, resolve, reject);
           } catch (error) {
             reject(error);
           }
@@ -113,9 +106,6 @@ class OwnPromise {
     if (typeof resolve !== 'function' || typeof reject !== 'function') {
       throw new TypeError('Not a function');
     }
-    if (result === new OwnPromise) {
-      return reject(new TypeError("Circular reference"));
-    };
 
     let called = false;
 
@@ -152,7 +142,7 @@ class OwnPromise {
   // ALL
   static all(promises) {
     if(typeof this !== 'function'){
-      throw TypeError('this === function');
+      throw TypeError('this !== function');
     }
 
     if(promises.length == undefined ){
@@ -173,9 +163,6 @@ class OwnPromise {
       let result = [];
       let count = 0;
       for (let i = 0; i < promises.length; i++) {
-        if( !(promises[i] instanceof OwnPromise)) {
-          throw TypeError('typeof this !== function');
-        }
         promises[i].then(
           data => {
             result[i] = data;
@@ -193,19 +180,21 @@ class OwnPromise {
 
    // RACE
    static race(promises) {
+    if (typeof this !== 'function') {
+      throw new TypeError('this is not a constructor');
+    }
+
     if(promises == [] ){
       return new OwnPromise((resolve, reject) => {
       });
     }
+    
     if(promises.length == undefined ){
       return new OwnPromise((resolve, reject) => {
-        reject(new TypeError('Not an array'));
+        reject(new TypeError('Not an itterable'));
       });
     }
 
-    if (typeof this !== 'function') {
-      throw new TypeError('this is not a constructor');
-    }
     return new OwnPromise((resolve, reject) => {
       for (let i = 0; i < promises.length; i++) {
         promises[i].then(
@@ -230,7 +219,6 @@ class OwnPromise {
       if (typeof resolve !== 'function' || typeof reject !== 'function') {
         throw new TypeError('Not a function');
       }
-
       resolve(value);
     });
   }

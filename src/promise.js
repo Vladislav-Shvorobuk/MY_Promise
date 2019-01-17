@@ -50,29 +50,24 @@ class OwnPromise {
       error;
     };
 
-    return new this.constructor((resolve, reject) => {
+    return new this.constructor(executor => {
       switch (this.status) {
       case FULFILLED:
         setTimeout(() => {
-          const result = onFulf(this.value);
-          OwnPromise.execute(result, resolve, reject);
+          executor(onFulf(this.value), null);
         }, 0);
         break;
       case REJECTED:
         setTimeout(() => {
-          const reason = onRej(this.value);
-          OwnPromise.execute(reason, resolve, reject);
+          executor(null, onRej(this.value));
         }, 0);
         break;
       default:
         this.onFulfilledCallbacks.push(value => {
-          const result = onFulf(value);
-          OwnPromise.execute(result, resolve, reject);
+          executor(onFulf(value));
         });
-
         this.onRejectedCallbacks.push(error => {
-          const reason = onRej(error);
-          OwnPromise.execute(reason, resolve, reject);
+          executor(onRej(error));
         });
       }
     });
@@ -86,21 +81,6 @@ class OwnPromise {
   // FINALLY
   finally(fn) {
     return this.then(res => OwnPromise.resolve(fn()).then(() => res), err => OwnPromise.reject(fn()).then(() => err));
-  }
-
-  // EXECUTE
-  static execute(result, resolve, reject) {
-    if (result instanceof OwnPromise) {
-      result.then(a => resolve(a));
-    } else {
-      resolve(result);
-    }
-
-    if (result instanceof OwnPromise) {
-      result.then(a => reject(a));
-    } else {
-      reject(result);
-    }
   }
 
   // RESOLVE
